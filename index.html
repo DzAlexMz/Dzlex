@@ -384,3 +384,162 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="es">
+<!-- Previous head and style sections remain exactly the same -->
+<head>
+    <!-- All previous head content remains unchanged -->
+</head>
+<body>
+    <!-- All previous HTML content remains unchanged until the script tag -->
+
+    <script>
+        let isAdmin = false;
+        // Initialize scripts from localStorage or use default if empty
+        let scripts = JSON.parse(localStorage.getItem('robloxScripts')) || [
+            {
+                id: 1,
+                name: "Script de Combate Básico",
+                code: "print('Combat Script')",
+                category: "combate"
+            },
+            {
+                id: 2,
+                name: "Auto Farm XP",
+                code: "print('Farm Script')",
+                category: "farmeo"
+            }
+        ];
+
+        // Function to save scripts to localStorage
+        function saveScripts() {
+            localStorage.setItem('robloxScripts', JSON.stringify(scripts));
+        }
+
+        // Check if admin status was previously saved
+        isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if (isAdmin) {
+            adminControls.classList.add('visible');
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        const scriptsContainer = document.getElementById('scriptsContainer');
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        const adminControls = document.querySelector('.admin-controls');
+        let currentCategory = 'all';
+
+        function renderScripts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredScripts = scripts.filter(script => {
+                const matchesSearch = script.name.toLowerCase().includes(searchTerm);
+                const matchesCategory = currentCategory === 'all' || script.category === currentCategory;
+                return matchesSearch && matchesCategory;
+            });
+
+            scriptsContainer.innerHTML = filteredScripts.map(script => `
+                <div class="script-card" data-id="${script.id}">
+                    <h3>${script.name}</h3>
+                    <p>Categoría: ${script.category}</p>
+                    <button class="view-script-btn" onclick="toggleScript(${script.id})">Ver Script</button>
+                    <button class="edit-script-btn ${isAdmin ? 'visible' : ''}" onclick="editScript(${script.id})">Editar Script</button>
+                    <div class="script-content" id="script-${script.id}">
+                        <pre><code>${script.code}</code></pre>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleScript(id) {
+            const content = document.getElementById(`script-${id}`);
+            content.classList.toggle('visible');
+        }
+
+        function editScript(id) {
+            const script = scripts.find(s => s.id === id);
+            if (script) {
+                document.getElementById('adminPanelTitle').textContent = 'Editar Script';
+                document.getElementById('submitBtn').textContent = 'Actualizar Script';
+                const form = document.getElementById('adminForm');
+                form.scriptName.value = script.name;
+                form.scriptCode.value = script.code;
+                form.scriptCategory.value = script.category;
+                form.scriptId.value = script.id;
+                document.getElementById('overlay').classList.add('visible');
+                document.getElementById('adminPanel').classList.add('visible');
+            }
+        }
+
+        searchInput.addEventListener('input', function(e) {
+            if (e.target.value === '676637' && !isAdmin) {
+                isAdmin = true;
+                localStorage.setItem('isAdmin', 'true');
+                adminControls.classList.add('visible');
+                e.target.value = '';
+                renderScripts();
+            } else {
+                renderScripts();
+            }
+        });
+
+        document.getElementById('adminPanelBtn').addEventListener('click', function() {
+            document.getElementById('adminPanelTitle').textContent = 'Nuevo Script';
+            document.getElementById('submitBtn').textContent = 'Publicar Script';
+            document.getElementById('adminForm').reset();
+            document.getElementById('adminForm').scriptId.value = '';
+            document.getElementById('overlay').classList.add('visible');
+            document.getElementById('adminPanel').classList.add('visible');
+        });
+
+        document.getElementById('overlay').addEventListener('click', function() {
+            this.classList.remove('visible');
+            document.getElementById('adminPanel').classList.remove('visible');
+        });
+
+        document.getElementById('adminForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const scriptId = formData.get('scriptId');
+            
+            if (scriptId) {
+                // Editar script existente
+                const index = scripts.findIndex(s => s.id.toString() === scriptId);
+                if (index !== -1) {
+                    scripts[index] = {
+                        id: parseInt(scriptId),
+                        name: formData.get('scriptName'),
+                        code: formData.get('scriptCode'),
+                        category: formData.get('scriptCategory')
+                    };
+                }
+            } else {
+                // Crear nuevo script
+                const newScript = {
+                    id: scripts.length + 1,
+                    name: formData.get('scriptName'),
+                    code: formData.get('scriptCode'),
+                    category: formData.get('scriptCategory')
+                };
+                scripts.push(newScript);
+            }
+
+            saveScripts(); // Save changes to localStorage
+            renderScripts();
+            document.getElementById('overlay').classList.remove('visible');
+            document.getElementById('adminPanel').classList.remove('visible');
+            e.target.reset();
+        });
+
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentCategory = button.dataset.category;
+                renderScripts();
+            });
+        });
+
+        // Renderizar scripts iniciales
+        renderScripts();
+    </script>
+</body>
+</html>
