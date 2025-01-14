@@ -117,49 +117,37 @@
             background: #333;
             padding: 1rem;
             border-radius: 4px;
-            overflow-x: auto;
         }
 
         .script-content.visible {
             display: block;
         }
 
-        .button-group {
-            display: grid;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .view-script-btn, .edit-script-btn, .delete-script-btn {
+        .view-script-btn {
+            background: #4a4a4a;
+            color: white;
             border: none;
             padding: 0.5rem;
             border-radius: 4px;
             cursor: pointer;
+            margin-top: 0.5rem;
             width: 100%;
-            color: white;
-            transition: opacity 0.3s;
-        }
-
-        .view-script-btn {
-            background: #4a4a4a;
         }
 
         .edit-script-btn {
             display: none;
             background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
         }
 
-        .delete-script-btn {
-            display: none;
-            background: #dc3545;
-        }
-
-        .edit-script-btn.visible, .delete-script-btn.visible {
+        .edit-script-btn.visible {
             display: block;
-        }
-
-        .button-group button:hover {
-            opacity: 0.9;
         }
 
         /* Admin Panel Styles */
@@ -202,11 +190,6 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 1rem;
-            transition: background 0.3s;
-        }
-
-        .admin-form button:hover {
-            background: #0056b3;
         }
 
         .overlay {
@@ -222,59 +205,6 @@
 
         .overlay.visible {
             display: block;
-        }
-
-        /* Confirm Delete Dialog */
-        .confirm-dialog {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #2c2c2c;
-            padding: 2rem;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-            z-index: 1001;
-            text-align: center;
-        }
-
-        .confirm-dialog.visible {
-            display: block;
-        }
-
-        .confirm-dialog-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .confirm-dialog-buttons button {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            transition: opacity 0.3s;
-        }
-
-        .confirm-dialog-buttons button:hover {
-            opacity: 0.9;
-        }
-
-        .confirm-yes {
-            background: #dc3545;
-        }
-
-        .confirm-no {
-            background: #6c757d;
-        }
-
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
         }
     </style>
 </head>
@@ -318,25 +248,9 @@
         </form>
     </div>
 
-    <!-- Confirm Delete Dialog -->
-    <div class="confirm-dialog" id="confirmDialog">
-        <h3>¿Estás seguro de que quieres eliminar este script?</h3>
-        <p>Esta acción no se puede deshacer.</p>
-        <div class="confirm-dialog-buttons">
-            <button class="confirm-yes" id="confirmYes">Sí, eliminar</button>
-            <button class="confirm-no" id="confirmNo">Cancelar</button>
-        </div>
-    </div>
-
     <script>
-        // Recuperar el estado de administrador del localStorage
-        let isAdmin = localStorage.getItem('isAdmin') === 'true';
-        if (isAdmin) {
-            document.querySelector('.admin-controls').classList.add('visible');
-        }
-
-        // Recuperar scripts del localStorage o usar los por defecto
-        let scripts = JSON.parse(localStorage.getItem('scripts')) || [
+        let isAdmin = false;
+        let scripts = [
             {
                 id: 1,
                 name: "Script de Combate Básico",
@@ -355,13 +269,7 @@
         const scriptsContainer = document.getElementById('scriptsContainer');
         const categoryButtons = document.querySelectorAll('.category-btn');
         const adminControls = document.querySelector('.admin-controls');
-        const confirmDialog = document.getElementById('confirmDialog');
         let currentCategory = 'all';
-        let scriptToDelete = null;
-
-        function saveScripts() {
-            localStorage.setItem('scripts', JSON.stringify(scripts));
-        }
 
         function renderScripts() {
             const searchTerm = searchInput.value.toLowerCase();
@@ -375,11 +283,8 @@
                 <div class="script-card" data-id="${script.id}">
                     <h3>${script.name}</h3>
                     <p>Categoría: ${script.category}</p>
-                    <div class="button-group">
-                        <button class="view-script-btn" onclick="toggleScript(${script.id})">Ver Script</button>
-                        <button class="edit-script-btn ${isAdmin ? 'visible' : ''}" onclick="editScript(${script.id})">Editar Script</button>
-                        <button class="delete-script-btn ${isAdmin ? 'visible' : ''}" onclick="showDeleteConfirm(${script.id})">Eliminar Script</button>
-                    </div>
+                    <button class="view-script-btn" onclick="toggleScript(${script.id})">Ver Script</button>
+                    <button class="edit-script-btn ${isAdmin ? 'visible' : ''}" onclick="editScript(${script.id})">Editar Script</button>
                     <div class="script-content" id="script-${script.id}">
                         <pre><code>${script.code}</code></pre>
                     </div>
@@ -407,35 +312,12 @@
             }
         }
 
-        function showDeleteConfirm(id) {
-            scriptToDelete = id;
-            confirmDialog.classList.add('visible');
-            document.getElementById('overlay').classList.add('visible');
-        }
-
-        function deleteScript() {
-            if (scriptToDelete !== null) {
-                scripts = scripts.filter(script => script.id !== scriptToDelete);
-                saveScripts();
-                renderScripts();
-                closeConfirmDialog();
-            }
-        }
-
-        function closeConfirmDialog() {
-            confirmDialog.classList.remove('visible');
-            document.getElementById('overlay').classList.remove('visible');
-            scriptToDelete = null;
-        }
-
-        // Event Listeners
         searchInput.addEventListener('input', function(e) {
             if (e.target.value === '676637' && !isAdmin) {
                 isAdmin = true;
-                localStorage.setItem('isAdmin', 'true');
                 adminControls.classList.add('visible');
                 e.target.value = '';
-                renderScripts();
+                renderScripts(); // Re-render para mostrar botones de edición
             } else {
                 renderScripts();
             }
@@ -453,11 +335,7 @@
         document.getElementById('overlay').addEventListener('click', function() {
             this.classList.remove('visible');
             document.getElementById('adminPanel').classList.remove('visible');
-            confirmDialog.classList.remove('visible');
         });
-
-        document.getElementById('confirmYes').addEventListener('click', deleteScript);
-        document.getElementById('confirmNo').addEventListener('click', closeConfirmDialog);
 
         document.getElementById('adminForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -478,9 +356,7 @@
             } else {
                 // Crear nuevo script
                 const newScript = {
-                    id: Date.now(), // Usar timestamp como// Crear nuevo script
-                const newScript = {
-                    id: Date.now(), // Usar timestamp como ID único
+                    id: scripts.length + 1,
                     name: formData.get('scriptName'),
                     code: formData.get('scriptCode'),
                     category: formData.get('scriptCategory')
@@ -488,7 +364,6 @@
                 scripts.push(newScript);
             }
 
-            saveScripts();
             renderScripts();
             document.getElementById('overlay').classList.remove('visible');
             document.getElementById('adminPanel').classList.remove('visible');
